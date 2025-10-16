@@ -1,8 +1,8 @@
 import { stdin, exit, stdout } from 'process'
 
-import type { Board, Piece, PieceInfo, Player, Position } from "./type"
-import { boardout_check, createBoard, draw_setup, reset_color, unwrap } from "./utils"
-import { PIECE_LSIT, type MoveBoard } from './piece'
+import { empityGrid, type Board, type Piece, type PieceInfo, type Player, type Position } from "./type"
+import { boardout_check, createBoard, draw_setup, unwrap } from "./utils"
+import { type MoveBoard } from './piece'
 
 const map = [
   ['R', 'X', 'B', 'X', 'K', 'X', 'B', 'X', 'R'],
@@ -26,7 +26,7 @@ const movement = (board: Board, now: Position, at: Position): Board => {
 
   if (!grid.piece) return board;
 
-  board[n_y][n_x] = {}
+  board[n_y][n_x] = empityGrid()
   board[y][x] = grid
 
   console.log(grid)
