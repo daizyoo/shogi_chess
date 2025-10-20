@@ -60,8 +60,9 @@ const document_draw = () => {
   let line = [
     "Cursor move: wasd",
     "Select: space",
+    "Put: i",
     "Select cancel: ecs",
-    "Exit: q or Ctrl + C",
+    "Exit: Ctrl + C",
   ];
   console.log()
   for (const l of line) console.log(l)
@@ -72,7 +73,7 @@ document_draw()
 
 stdin.on("data", k => {
   const key = k.toString('utf8')
-  if (key === CTRl_C || key === 'q' || !game.status) exit()
+  if (key === CTRl_C || !game.status) exit()
   game.handleInput(key)
 
   // decide which render to call based on selection state
