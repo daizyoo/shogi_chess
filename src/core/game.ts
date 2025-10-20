@@ -50,10 +50,10 @@ export class Game {
   status = true
 
   put_selection: { status: boolean; pos?: Position } = { status: false }
+  selection: { status: boolean; piece?: Piece; pos?: Position } = { status: false }
 
   // new stateful properties
   cursor: Position = { x: 0, y: 0 }
-  selection: { status: boolean; piece?: Piece; pos?: Position } = { status: false }
   moveBoard?: MoveBoard
   board: Board
 
@@ -71,7 +71,7 @@ export class Game {
     this.board = createBoard(map, players)
   }
 
-  get_turn_player(): Player {
+  getTurnPlayer(): Player {
     return this.turn ? this.players[0] : this.players[1]
   }
 
@@ -99,7 +99,7 @@ export class Game {
       this.resetPutSelection()
     }
 
-    const turnPlayer = this.get_turn_player()
+    const turnPlayer = this.getTurnPlayer()
     let { x, y } = this.cursor
 
     // 駒を動かす処理
@@ -129,7 +129,6 @@ export class Game {
 
     // 駒を置く処理
     if (this.put_selection.status && this.put_selection.pos) {
-      const turnPlayer = this.get_turn_player()
       let hands = this.hand.get(turnPlayer.id) // 現プレイヤーの持ち駒を取得
       let number = hands?.get(key)
       // 打ち込まれたキーの駒が存在するか確認
