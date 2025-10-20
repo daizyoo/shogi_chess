@@ -1,6 +1,6 @@
 import { stdin, exit, stdout } from 'process'
 
-import { draw_setup } from "./utils"
+import { draw_setup, unwrap } from "./utils"
 import { Game } from './game'
 import { CTRl_C } from './consts'
 
@@ -51,15 +51,19 @@ drawGame(game)
 
 // デバッグ出力用
 const debug_draw = () => {
+  console.log(game.selection)
+  console.log(game.put_selection)
+  console.log(game.hand)
 }
 
 const document_draw = () => {
   let line = [
-    "cursor move: wasd",
-    "select: space",
-    "select cancel: ecs",
-    "exit: q or Ctrl + C",
+    "Cursor move: wasd",
+    "Select: space",
+    "Select cancel: ecs",
+    "Exit: q or Ctrl + C",
   ];
+  console.log()
   for (const l of line) console.log(l)
 }
 
@@ -74,6 +78,15 @@ stdin.on("data", k => {
   // decide which render to call based on selection state
   if (game.selection.status && game.moveBoard) drawGameMoveBoard(game)
   else drawGame(game)
+
+  console.log(`${game.players[0].name}`)
+  for (const piece of unwrap(game.hand.get(game.players[0].id)?.keys())) {
+    console.log(piece)
+  }
+  console.log(`${game.players[1].name}`)
+  for (const piece of unwrap(game.hand.get(game.players[1].id)?.keys())) {
+    console.log(piece)
+  }
 
   debug_draw()
   document_draw()
