@@ -1,159 +1,267 @@
-import type { Board, Piece, PieceInfo, Player, Position } from "./type";
-import { boardout_check, range, unwrap } from "./utils";
+import type { Board, MoveBoard, PieceInfo, Position } from "./type";
+import { toMoveBoard, unwrap } from "./utils";
+import { BOARD_HEIGHT, BOARD_WIDTH } from "./consts";
 
-export type MGrid = {
-  piece?: Piece,
-  move: boolean
+
+const inBounds = (y: number, x: number): boolean => {
+  return y >= 0 && y < BOARD_HEIGHT && x >= 0 && x < BOARD_WIDTH;
+};
+
+// helper: get player id from original board without converting
+const getPlayerId = (board: Board, pos: Position): number => {
+  return unwrap(board[pos.y][pos.x].piece).player.id;
+};
+
+const getPlayerTurn = (board: Board, pos: Position): boolean => {
+  return unwrap(board[pos.y][pos.x].piece).player.turn;
 }
 
-export type MoveBoard = MGrid[][]
+// Discrete offset moves (King, Knight (chess), Gold, Silver, shogi-Knight, Pawn (shogi single-step), etc.)
+const moveOffsets = (_board: Board, pos: Position, offsets: readonly [number, number][]): MoveBoard => {
+  const board = toMoveBoard(_board);
+  const { x: pos_x, y: pos_y } = pos;
+  const me = unwrap(board[pos_y][pos_x].piece).player.id;
 
-const toMoveBoard = (board: Board): MoveBoard => {
-  return board.map(row => row.map((g): MGrid => {
-    if (!g.piece) return { move: false }
-    else return { piece: g.piece, move: false }
-  }))
-}
+  for (const [dy, dx] of offsets) {
+    const n_y = pos_y + dy;
+    const n_x = pos_x + dx;
+    if (!inBounds(n_y, n_x)) continue;
 
-// posにある駒の動ける場所を返す
-const move = (_board: Board, pos: Position /*今の座標*/, list: readonly [number, number][] /*動ける座標*/): MoveBoard => {
-  let board = toMoveBoard(_board)
-  const { x: pos_x, y: pos_y } = pos
+    const g = board[n_y][n_x];
+    if (!g.piece) {
+      board[n_y][n_x].move = true;
+    } else {
+      if (g.piece.player.id !== me) board[n_y][n_x].move = true;
+    }
+  }
 
-  for (const [y, x] of list) {
-    // 配列外ではないか
-    if (!boardout_check(pos_y, y) && !boardout_check(pos_x, x)) {
-      let n_y = pos_y + y
-      let n_x = pos_x + x
-      // 今の座標のGridを取得
-      let grid = board[n_y][n_x]
+  return board;
+};
 
-      // Gridに駒がなかったら動ける
-      if (!grid.piece) {
-        board[n_y][n_x].move = true
+// Sliding moves (rook, bishop, queen, lance)
+const slide = (boardSrc: Board, pos: Position, directions: readonly [number, number][]): MoveBoard => {
+  const board = toMoveBoard(boardSrc);
+  const { x: pos_x, y: pos_y } = pos;
+  const me = unwrap(board[pos_y][pos_x].piece).player.id;
+
+  for (const [dy, dx] of directions) {
+    let step = 1;
+    while (true) {
+      const n_y = pos_y + dy * step;
+      const n_x = pos_x + dx * step;
+      if (!inBounds(n_y, n_x)) break;
+
+      const g = board[n_y][n_x];
+      if (!g.piece) {
+        board[n_y][n_x].move = true;
       } else {
-        if (grid.piece.player.id != unwrap(board[pos_y][pos_x].piece).player.id) board[n_y][n_x].move = true
+        if (g.piece.player.id !== me) board[n_y][n_x].move = true;
+        break;
       }
+      step++;
+      if (step > Math.max(BOARD_WIDTH, BOARD_HEIGHT) + 2) break; // safe guard
     }
   }
 
-  return board
-}
+  return board;
+};
 
-const drawMovementPosition = (mboard: MoveBoard) => {
-  mboard.forEach(row => {
-    let line = ''
-    row.forEach(g => {
-      line += g.move ? 'O' : 'X'
-    })
-    console.log(line)
-  })
-}
+// Chess pawn (single forward, diagonal capture). No double-step, no en-passant, no promotion.
+const chessPawn = (boardSrc: Board, pos: Position): MoveBoard => {
+  const { x: pos_x, y: pos_y } = pos;
+  const playerId = getPlayerId(boardSrc, pos);
+  // 方向は getPlayerTurn を使って決定（true -> 下方向(1), false -> 上方向(-1)）
+  const dir = !getPlayerTurn(boardSrc, pos) ? 1 : -1;
+  const forwardY = pos_y + dir;
 
-const jump_check = (b: MoveBoard, pos: Position, player: Player): MoveBoard => {
-  let y = b[pos.y];
-  let min = y.slice(0, pos.x).reverse()
-  let max = y.slice(pos.x)
+  const board = toMoveBoard(boardSrc);
 
-  let first_piece: boolean = false
-
-  min = min.map(g => {
-    // 駒がまだ見つかっていない
-    if (!first_piece) {
-      // 駒があったら
-      if (g.piece) first_piece = true
-    } else { // すでに駒が見つかっていたら
-      g.move = false
-    }
-
-    return g
-  }).reverse()
-
-  first_piece = false
-
-  max = max.map(g => {
-    // 駒がまだ見つかっていない
-    if (!first_piece) {
-      // 駒があったら
-      if (g.piece) first_piece = true
-    } else { // すでに駒が見つかっていたら
-      g.move = false
-    }
-
-    return g
-  })
-
-  y = min.concat(max)
-
-  let find_piece = false
-
-  for (let [y, line] of b.entries()) {
-    for (let [x, g] of line.entries()) {
-      if (y === x) {
-        if (g.piece && find_piece) {
-          find_piece = true
-          if (g.piece.player == player) b[y][x].move = false // 駒が自分のものなら動けない 
-          else b[y][x].move = true //相手のものなら動ける
-        }
-      }
-    }
+  // forward one if empty
+  if (inBounds(forwardY, pos_x) && !board[forwardY][pos_x].piece) {
+    board[forwardY][pos_x].move = true;
   }
 
-  return b
-}
+  // captures: diag left/right
+  for (const dx of [-1, 1]) {
+    const n_x = pos_x + dx;
+    if (!inBounds(forwardY, n_x)) continue;
+    const g = board[forwardY][n_x];
+    if (g.piece && g.piece.player.id !== playerId) board[forwardY][n_x].move = true;
+  }
+
+  return board;
+};
+
+// Shogi pawn (single forward, captures by moving forward)
+const shogiPawn = (boardSrc: Board, pos: Position): MoveBoard => {
+  const { x: pos_x, y: pos_y } = pos;
+  const playerId = getPlayerId(boardSrc, pos);
+  // 方向を getPlayerTurn で決定
+  const dir = !getPlayerTurn(boardSrc, pos) ? 1 : -1;
+  const forwardY = pos_y + dir;
+
+  const board = toMoveBoard(boardSrc);
+  if (!inBounds(forwardY, pos_x)) return board;
+
+  const g = board[forwardY][pos_x];
+  if (!g.piece) board[forwardY][pos_x].move = true;
+  else if (g.piece.player.id !== playerId) board[forwardY][pos_x].move = true;
+
+  return board;
+};
+
+// shogi lance: sliding forward only
+const shogiLance = (boardSrc: Board, pos: Position): MoveBoard => {
+  // 方向を getPlayerTurn で決定
+  const dir = !getPlayerTurn(boardSrc, pos) ? 1 : -1;
+  return slide(boardSrc, pos, [[dir, 0]]);
+};
+
+// chess knight offsets
+const chessKnight = (board: Board, pos: Position): MoveBoard => {
+  const offsets: [number, number][] = [
+    [-2, -1], [-2, 1],
+    [-1, -2], [-1, 2],
+    [1, -2], [1, 2],
+    [2, -1], [2, 1],
+  ];
+  return moveOffsets(board, pos, offsets);
+};
+
+// shogi knight (only two forward 'L' moves)
+const shogiKnight = (board: Board, pos: Position): MoveBoard => {
+  // 方向を getPlayerTurn で決定
+  const dir = !getPlayerTurn(board, pos) ? 1 : -1;
+  const offsets: [number, number][] = [
+    [2 * dir, -1],
+    [2 * dir, 1],
+  ];
+  return moveOffsets(board, pos, offsets);
+};
+
+// helper: all 8 directions
+const ORTHO: [number, number][] = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+const DIAG: [number, number][] = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+const ALL8: [number, number][] = [...ORTHO, ...DIAG];
 
 export const PIECE_LSIT: Map<string, PieceInfo> = new Map();
 
-// initial `PIECE_LIST`
+// initialize PIECE_LSIT
 (() => {
   const PIECES: PieceInfo[] = [
+    // --- Chess pieces (uppercase) ---
     {
       type: 'chess',
       key: 'K',
       name: 'King',
-      movement: (board: Board, pos: Position, player: Player): MoveBoard => move(board, pos, [
-        [-1, 0],
-        [-1, 1],
-        [-1, -1],
-
-        [1, 0],
-        [1, 1],
-        [1, -1],
-
-        [0, 1],
-        [0, -1],
-      ])
+      movement: (board, pos) => moveOffsets(board, pos, ALL8)
+    },
+    {
+      type: 'chess',
+      key: 'Q',
+      name: 'Queen',
+      movement: (board, pos) => slide(board, pos, ALL8)
     },
     {
       type: 'chess',
       key: 'R',
       name: 'Rook',
-      movement: (board: Board, pos: Position, player: Player): MoveBoard => {
-        let list: [number, number][] = []
-
-        range(-9, 9).forEach(n => list.push([n, 0]))
-        range(-9, 9).forEach(n => list.push([0, n]))
-        // range(-9, 9).forEach(n => list.push([n, n]))
-        // range(-9, 9).forEach(n => list.push([-n, n]))
-
-        let mb = move(board, pos, list);
-
-        drawMovementPosition(mb)
-
-        return mb
-      }
+      movement: (board, pos) => slide(board, pos, ORTHO)
     },
     {
       type: 'chess',
       key: 'B',
       name: 'Bishop',
-      movement: (board: Board, pos: Position, player: Player): MoveBoard => {
-        let b = toMoveBoard(board)
-        return b
+      movement: (board, pos) => slide(board, pos, DIAG)
+    },
+    {
+      type: 'chess',
+      key: 'N',
+      name: 'Knight',
+      movement: (board, pos) => chessKnight(board, pos)
+    },
+    {
+      type: 'chess',
+      key: 'P',
+      name: 'Pawn',
+      movement: (board, pos) => chessPawn(board, pos)
+    },
+
+    // --- Shogi pieces (lowercase keys) ---
+    {
+      type: 'shogi',
+      key: 'k', // king
+      name: 'King (shogi)',
+      movement: (board, pos) => moveOffsets(board, pos, ALL8)
+    },
+    {
+      type: 'shogi',
+      key: 'r', // rook
+      name: 'Rook (shogi)',
+      movement: (board, pos) => slide(board, pos, ORTHO)
+    },
+    {
+      type: 'shogi',
+      key: 'b', // bishop
+      name: 'Bishop (shogi)',
+      movement: (board, pos) => slide(board, pos, DIAG)
+    },
+    {
+      type: 'shogi',
+      key: 'g', // gold general
+      name: 'Gold General',
+      movement: (board, pos) => {
+        // 方向を getPlayerTurn で決定
+        const dir = getPlayerTurn(board, pos) ? 1 : -1;
+        const offsets: [number, number][] = [
+          [dir, 0],
+          [dir, -1],
+          [dir, 1],
+          [0, -1],
+          [0, 1],
+          [-dir, 0],
+        ];
+        return moveOffsets(board, pos, offsets);
       }
+    },
+    {
+      type: 'shogi',
+      key: 's', // silver general
+      name: 'Silver General',
+      movement: (board, pos) => {
+        // 方向を getPlayerTurn で決定
+        const dir = getPlayerTurn(board, pos) ? 1 : -1;
+        const offsets: [number, number][] = [
+          [dir, 0],
+          [dir, -1],
+          [dir, 1],
+          [-dir, -1],
+          [-dir, 1],
+        ];
+        return moveOffsets(board, pos, offsets);
+      }
+    },
+    {
+      type: 'shogi',
+      key: 'n', // shogi knight
+      name: 'Knight (shogi)',
+      movement: (board, pos) => shogiKnight(board, pos)
+    },
+    {
+      type: 'shogi',
+      key: 'l', // lance
+      name: 'Lance',
+      movement: (board, pos) => shogiLance(board, pos)
+    },
+    {
+      type: 'shogi',
+      key: 'p', // pawn
+      name: 'Pawn (shogi)',
+      movement: (board, pos) => shogiPawn(board, pos)
     }
-  ]
+  ];
+
   for (const p of PIECES) {
-    PIECE_LSIT.set(p.key, p)
+    PIECE_LSIT.set(p.key, p);
   }
-})()
+})();

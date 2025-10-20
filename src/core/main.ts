@@ -1,179 +1,80 @@
 import { stdin, exit, stdout } from 'process'
 
-import { empityGrid, type Board, type Piece, type PieceInfo, type Player, type Position } from "./type"
-import { boardout_check, createBoard, draw_setup, unwrap } from "./utils"
-import { type MoveBoard } from './piece'
+import { draw_setup } from "./utils"
+import { Game } from './game'
+import { CTRl_C } from './consts'
 
-const map = [
-  ['R', 'X', 'B', 'X', 'K', 'X', 'B', 'X', 'R'],
-  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-  ['R', 'X', 'B', 'X', 'K', 'X', 'B', 'X', 'R'],
-]
-
-const movement = (board: Board, now: Position, at: Position): Board => {
-  let n_x = now.x
-  let n_y = now.y
-  let x = at.x
-  let y = at.y
-
-  let grid = board[n_y][n_x]
-
-  if (!grid.piece) return board;
-
-  board[n_y][n_x] = empityGrid()
-  board[y][x] = grid
-
-  console.log(grid)
-
-  return board
-}
-
-class Game {
-  board: Board
-  // turn
-  // true , false
-  players: [Player, Player]
-  available_pieces: [number, PieceInfo[]][]
-
-  turn = true
-  status = true
-
-  constructor(players: [Player, Player], map: string[][]) {
-    let board = createBoard(map, players)
-
-    this.available_pieces = []
-    this.players = players
-    this.board = board
-  }
-
-  draw(c: Position) {
-    this.board.forEach((r, y) => {
-      r.forEach((g, x) => {
-        if (c.x == x && c.y == y) stdout.write('\x1b[42m');
-
-        if (g.piece) {
-          stdout.write(g.piece.key + ' ', 'utf8')
-        } else {
-          stdout.write('・')
-        }
-
-        stdout.write('\x1b[49m')
-      })
-      console.log()
-    })
-  }
-
-  get_turn_player(): Player {
-    return this.turn ? this.players[0] : this.players[1]
-  }
-
-  // stdout.write('\x1b[42m') green
-  // stdout.write('\x1b[41m') red
-
-  move(c: Position) {
-  }
-}
-
-const move_cursor = (c: Position, key: string): Position => {
-  switch (key) {
-    case 'a': !boardout_check(c.x, -1) ? c.x -= 1 : {}; break;
-    case 'd': !boardout_check(c.x, 1) ? c.x += 1 : {}; break;
-    case 'w': !boardout_check(c.y, -1) ? c.y -= 1 : {}; break;
-    case 's': !boardout_check(c.y, 1) ? c.y += 1 : {}; break;
-  }
-  return c
-}
-
-let game = new Game(
-  [
-    { piece_type: 'chess', name: 'player1', id: 0 },
-    { piece_type: 'shogi', name: 'player2', id: 1 }
-  ],
-  map
-)
-
-draw_setup()
-
-type Select = {
-  status: boolean
-  piece?: Piece
-  pos?: Position
-}
-
-let select: Select = {
-  status: false
-}
-let c: Position = { x: 0, y: 0 }
-let move_board: MoveBoard
-
-game.draw(c)
-
-// stdout.write('\x1b[49m') default
-// stdout.write('\x1b[42m') green
-// stdout.write('\x1b[41m') red
-
-const draw_move_board = () => {
+// external rendering functions (keep rendering outside Game)
+const drawGame = (game: Game) => {
   console.clear()
+  game.board.forEach((r, y) => {
+    r.forEach((g, x) => {
+      if (game.cursor.x === x && game.cursor.y === y) stdout.write('\x1b[42m');
 
-  move_board.forEach((row, y) => {
-    row.forEach((g, x) => {
-      if (g.move) stdout.write('\x1b[41m')
-      if (c.x == x && c.y == y) stdout.write('\x1b[42m')
+      if (g.piece) stdout.write(g.piece.key + ' ', 'utf8')
+      else stdout.write('・')
 
-      if (g.piece) {
-        stdout.write(g.piece.key + ' ', 'utf8')
-      } else {
-        stdout.write('・')
-      }
       stdout.write('\x1b[49m')
     })
     console.log()
   })
 }
 
-stdin.on("data", k => {
-  let key = k.toString('utf8')
-  if (key === "\u0003" || !game.status) exit()
-
+const drawGameMoveBoard = (game: Game) => {
+  if (!game.moveBoard) return
   console.clear()
+  game.moveBoard.forEach((row, y) => {
+    row.forEach((g, x) => {
+      if (g.move) stdout.write('\x1b[41m')
+      if (game.cursor.x === x && game.cursor.y === y) stdout.write('\x1b[42m')
 
-  if (select.status && select.pos) {
-    if (key == ' ' && move_board[c.y][c.x].move) {
-      select.status = false
+      if (g.piece) stdout.write(g.piece.key + ' ', 'utf8')
+      else stdout.write('・')
 
-      game.board[c.y][c.x] = { piece: select.piece }
-      game.board[select.pos.y][select.pos.x] = {}
+      stdout.write('\x1b[49m')
+    })
+    console.log()
+  })
+}
 
-      select = {
-        status: false
-      }
-    }
-    c = move_cursor(c, key)
+let game = new Game(
+  [
+    { piece_type: 'chess', turn: true, name: 'player1', id: 0 },
+    { piece_type: 'shogi', turn: false, name: 'player2', id: 1 }
+  ],
+)
 
-    draw_move_board()
+draw_setup()
 
-    return
-  }
+// initial render
+drawGame(game)
 
-  console.log('main')
+// デバッグ出力用
+const debug_draw = () => {
+}
+const document_draw = () => {
+  let line = [
+    "cursor move: wasd",
+    "select: space",
+    "select cancel: ecs",
+    "exit: q or Ctrl + C",
+  ];
+  for (const l of line) console.log(l)
+}
 
-  console.log(c)
+debug_draw()
+document_draw()
 
-  c = move_cursor(c, key)
-  if (key == ' ' && game.board[c.y][c.x].piece) {
-    console.clear()
-    select.status = true
-    select.piece = game.board[c.y][c.x].piece
-    select.pos = c
-    move_board = unwrap(game.board[c.y][c.x].piece?.movement(game.board, c, game.get_turn_player()))
-    draw_move_board()
-  }
+stdin.on("data", k => {
+  const key = k.toString('utf8')
+  if (key === CTRl_C || key === 'q' || !game.status) exit()
+  game.handleInput(key)
 
-  game.draw(c)
-});
+  // decide which render to call based on selection state
+  if (game.selection.status && game.moveBoard) drawGameMoveBoard(game)
+  else drawGame(game)
+
+  debug_draw()
+  document_draw()
+})
+

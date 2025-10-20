@@ -10,7 +10,8 @@
     ],
     "types": [
       "vite/client",
-      "node"
+      "node",
+      "bun-types"
     ],
     "skipLibCheck": true,
     /* Bundler mode */
