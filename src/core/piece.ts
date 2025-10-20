@@ -2,7 +2,6 @@ import type { Board, MoveBoard, PieceInfo, Position } from "./type";
 import { toMoveBoard, unwrap } from "./utils";
 import { BOARD_HEIGHT, BOARD_WIDTH } from "./consts";
 
-
 const inBounds = (y: number, x: number): boolean => {
   return y >= 0 && y < BOARD_HEIGHT && x >= 0 && x < BOARD_WIDTH;
 };

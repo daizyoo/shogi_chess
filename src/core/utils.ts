@@ -1,15 +1,13 @@
 import { stdin } from "process";
 import { BOARD_HEIGHT, BOARD_WIDTH } from "./consts";
-import type { Board, MGrid, MoveBoard, Piece, Player } from "./type";
+import type { Board, Grid, MGrid, MoveBoard, Piece, Player } from "./type";
 import { PIECE_LSIT } from "./piece";
-import type { Grid } from "matter";
 
 export const createBoard = (list: string[][], players: [Player, Player]): Board => {
   sizeChekcer(list)
 
   return list.map(row => row.map(key => createGrid(key, players)))
 }
-
 
 export const toMoveBoard = (board: Board): MoveBoard => {
   return board.map(row => row.map((g): MGrid => {
@@ -50,7 +48,6 @@ export const boardout_check = (n: number, add: number): boolean => {
   const limit = Math.max(BOARD_HEIGHT, BOARD_WIDTH)
   return p < 0 || p >= limit
 }
-
 
 // 指定した範囲の数列を返す
 export const range = (start: number, end: number): number[] => {

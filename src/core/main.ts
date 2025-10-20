@@ -52,6 +52,7 @@ drawGame(game)
 // デバッグ出力用
 const debug_draw = () => {
 }
+
 const document_draw = () => {
   let line = [
     "cursor move: wasd",
@@ -77,4 +78,3 @@ stdin.on("data", k => {
   debug_draw()
   document_draw()
 })
-
