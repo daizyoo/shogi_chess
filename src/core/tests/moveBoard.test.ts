@@ -1,5 +1,6 @@
-import { createBoard, toMoveBoard } from "../utils";
 import { describe, it, expect } from "bun:test";
+
+import { createBoard, toMoveBoard } from "../utils";
 
 describe("move board", () => {
   const shogi_map = [
@@ -27,3 +28,4 @@ describe("move board", () => {
     expect(mBoard?.every(y => y.every(g => !g.move))).toBe(true)
   })
 })
+

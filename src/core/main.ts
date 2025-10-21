@@ -39,8 +39,8 @@ const drawGameMoveBoard = (game: Game) => {
 
 let game = new Game(
   [
-    { piece_type: 'chess', turn: true, name: 'player1', id: 0 },
-    { piece_type: 'shogi', turn: false, name: 'player2', id: 1 }
+    { piece_type: 'chess', turn: false, name: 'player1', id: 0 },
+    { piece_type: 'shogi', turn: true, name: 'player2', id: 1 }
   ],
 )
 

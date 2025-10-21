@@ -3,43 +3,7 @@ import { PIECE_LSIT } from "./piece"
 import type { MoveBoard } from "./type"
 import type { Board, Piece, Player, Position } from "./type"
 import { boardout_check, createBoard, unwrap } from "./utils"
-
-const chess_map = [
-  // 0: 将棋の初期行（香→桂→銀→金→王→金→銀→桂→香）
-  ['l', 'n', 's', 'g', 'k', 'g', 's', 'n', 'l'],
-  // 1: 将棋の2列目（右から歩の射線に配置される飛／角）
-  ['X', 'r', 'X', 'X', 'X', 'X', 'X', 'b', 'X'],
-  // 2: 将棋の歩列
-  ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
-  // 3-5: 空
-  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-  // 6: 空行（将棋 ⇆ チェス の間の余白）
-  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-  // 7: チェスのポーン列（8列分を左詰めして最後列を空に）
-  ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'X'],
-  // 8: チェスのバックランク（左からルーク, ナイト, ビショップ, クイーン, キング, ...）
-  ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R', 'X']
-]
-
-const shogi_map = [
-  // 0: チェスのバックランク（上側にチェスを置く）
-  ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R', 'X'],
-  // 1: チェスのポーン列
-  ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'X'],
-  // 2-5: 空
-  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-  // 6: 将棋の歩列（下側に将棋を置く）
-  ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
-  // 7: 将棋の2列目（飛・角）
-  ['X', 'r', 'X', 'X', 'X', 'X', 'X', 'b', 'X'],
-  // 8: 将棋の初期行（香→桂→銀→金→王→金→銀→桂→香）
-  ['l', 'n', 's', 'g', 'k', 'g', 's', 'n', 'l']
-]
+import * as map from "./map"
 
 export class Game {
   // .0 -> 先手 .1 -> 後手
@@ -63,12 +27,16 @@ export class Game {
     this.hand.set(players[0].id, new Map())
     this.hand.set(players[1].id, new Map())
 
-    let map
-    switch (players[0].piece_type) {
-      case 'chess': map = chess_map; break;
-      case 'shogi': map = shogi_map; break;
-    }
-    this.board = createBoard(map, players)
+    let first_player = players.find(p => p.turn)
+    let second_player = players.find(p => !p.turn)
+    if (!first_player || !second_player) process.exit() // 先手後手がどちらかいなければ終了
+
+    this.players[0] = first_player
+    this.players[1] = second_player
+
+    let m = map.getMap(first_player.piece_type, 'Ou_2_Queen_2')
+
+    this.board = createBoard(m, players)
   }
 
   getTurnPlayer(): Player {
