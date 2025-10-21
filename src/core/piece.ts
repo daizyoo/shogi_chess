@@ -211,7 +211,7 @@ export const PIECE_LSIT: Map<string, PieceInfo> = new Map();
       name: 'Gold General',
       movement: (board, pos) => {
         // 方向を getPlayerTurn で決定
-        const dir = getPlayerTurn(board, pos) ? 1 : -1;
+        const dir = !getPlayerTurn(board, pos) ? 1 : -1;
         const offsets: [number, number][] = [
           [dir, 0],
           [dir, -1],
@@ -229,7 +229,7 @@ export const PIECE_LSIT: Map<string, PieceInfo> = new Map();
       name: 'Silver General',
       movement: (board, pos) => {
         // 方向を getPlayerTurn で決定
-        const dir = getPlayerTurn(board, pos) ? 1 : -1;
+        const dir = !getPlayerTurn(board, pos) ? 1 : -1;
         const offsets: [number, number][] = [
           [dir, 0],
           [dir, -1],
