@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 
-import Game from './scenes/game.ts'
-import Menu from './scenes/menu.ts'
+import Game from './scenes/game'
+import Menu from './scenes/menu'
 
 // ゲームの基本設定を指定
 const config: Phaser.Types.Core.GameConfig = {
@@ -23,4 +23,3 @@ const config: Phaser.Types.Core.GameConfig = {
 
 // Phaser起動させるプロセスを開始
 new Phaser.Game(config)
-

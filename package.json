@@ -10,15 +10,17 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@types/bun": "latest",
     "typescript": "~5.8.3",
-    "vite": "npm:rolldown-vite@7.1.12",
-    "@types/bun": "latest"
+    "vite": "npm:rolldown-vite@7.1.12"
   },
   "overrides": {
     "vite": "npm:rolldown-vite@7.1.12"
   },
   "module": "index.ts",
   "dependencies": {
-    "phaser": "^3.90.0"
+    "@types/ws": "^8.18.1",
+    "phaser": "^3.90.0",
+    "ws": "^8.18.3"
   }
 }
