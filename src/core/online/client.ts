@@ -1,8 +1,8 @@
-import { CTRl_C } from "../consts"
-import { Game } from "../game"
-import type { Player } from "../type"
-import { draw_setup, unwrap } from "../utils"
-import type { Data, WaitRoom, InRoom, MessageType, RoomInfo } from "./types"
+import { ESC } from "../consts.js"
+import { Game } from "../game.js"
+import type { Player } from "../type.js"
+import { draw_setup, unwrap } from "../utils.js"
+import type { Data, WaitRoom, InRoom, MessageType, RoomInfo } from "./types.js"
 import { stdout, stdin, exit } from 'process'
 
 const ws = new WebSocket("ws://localhost:8080")
@@ -111,7 +111,7 @@ const gameInput = (game: Game) => {
   // stdin.removeAllListeners('data');  // イベントを削除
   stdin.on("data", k => {
     const key = k.toString('utf8')
-    if (key === CTRl_C || !game.status) exit()
+    if (key === ESC || !game.status) exit()
     game.handleInput(key)
 
     // decide which render to call based on selection state

@@ -1,9 +1,9 @@
-import { ESC } from "./consts"
-import { PIECE_LSIT } from "./piece"
-import type { MoveBoard } from "./type"
-import type { Board, Piece, Player, Position } from "./type"
-import { boardout_check, createBoard, unwrap } from "./utils"
-import * as map from "./map"
+import { ESC } from "./consts.js"
+import { PIECE_LSIT } from "./piece.js"
+import type { MoveBoard } from "./type.js"
+import type { Board, Piece, Player, Position } from "./type.js"
+import { boardout_check, createBoard, unwrap } from "./utils.js"
+import * as map from "./map.js"
 
 export class Game {
   // .0 -> 先手 .1 -> 後手

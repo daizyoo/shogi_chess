@@ -1,4 +1,4 @@
-import type { MapPattern, PieceMap, PieceType } from "./type"
+import type { MapPattern, PieceMap, PieceType } from "./type.js"
 
 const DEFAULT_MAP: PieceMap = [
   ['l', 'n', 's', 'g', 'k', 'g', 's', 'n', 'l'],

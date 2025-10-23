@@ -1,8 +1,8 @@
 import { stdin, exit, stdout } from 'process'
 
-import { draw_setup, unwrap } from "./utils"
-import { Game } from './game'
-import { CTRl_C } from './consts'
+import { draw_setup, unwrap } from "./utils.js"
+import { Game } from './game.js'
+import { CTRl_C } from './consts.js'
 
 // external rendering functions (keep rendering outside Game)
 const drawGame = (game: Game) => {

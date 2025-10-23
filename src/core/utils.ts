@@ -1,7 +1,7 @@
 import { stdin } from "process";
-import { BOARD_HEIGHT, BOARD_WIDTH } from "./consts";
-import type { Board, Grid, MGrid, MoveBoard, Piece, Player } from "./type";
-import { PIECE_LSIT } from "./piece";
+import { BOARD_HEIGHT, BOARD_WIDTH } from "./consts.js";
+import type { Board, Grid, MGrid, MoveBoard, Piece, Player } from "./type.js";
+import { PIECE_LSIT } from "./piece.js";
 
 export const createBoard = (list: string[][], players: [Player, Player]): Board => {
   sizeChekcer(list)

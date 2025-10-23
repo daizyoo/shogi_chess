@@ -1,5 +1,5 @@
-import type { Game } from "../game"
-import type { Player } from "../type"
+import type { Game } from "../game.js"
+import type { Player } from "../type.js"
 
 const MESSAGE_TYPE = {
   create_room: "create_room",

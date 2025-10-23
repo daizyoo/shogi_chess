@@ -1,8 +1,8 @@
 import WebSocket, { WebSocketServer } from "ws"
-import type { MessageType, Response, WaitRoom, Room, InRoom, Data } from "./types"
-import { toString } from "./types"
-import { Game } from "../game"
-import type { UpdateGame } from "./client"
+import type { MessageType, Response, WaitRoom, Room, InRoom, Data } from "./types.js"
+import { toString } from "./types.js"
+import { Game } from "../game.js"
+import type { UpdateGame } from "./client.js"
 
 type WSSInfo = {
   player_id: number,
