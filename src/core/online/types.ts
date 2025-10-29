@@ -1,5 +1,5 @@
 import type { Game } from "../game.js"
-import type { Player } from "../type.js"
+import type { Board, MoveBoard, Piece, Player, Position } from "../type.js"
 
 const MESSAGE_TYPE = {
   create_room: "create_room",
@@ -41,6 +41,27 @@ export type InRoom = {
 
 export type Rooms = Room[]
 export type WaitRooms = WaitRoom[] // changed: wait rooms must include player entries
+
+export type UpdateGame = {
+  player_id: number,
+  room_id: number,
+  key: string
+}
+
+export interface ReturnGame {
+  players: [Player, Player]
+  hand: [number, [string, number][]][]
+
+  turn: boolean
+  status: boolean
+
+  put_selection: { status: boolean; pos?: Position }
+  selection: { status: boolean; piece?: Piece; pos?: Position }
+
+  cursor: Position
+  moveBoard?: MoveBoard
+  board: Board
+}
 
 const CODE = {
   Ok: 'ok',

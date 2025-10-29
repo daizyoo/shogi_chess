@@ -78,6 +78,14 @@ const chessPawn = (boardSrc: Board, pos: Position): MoveBoard => {
   // forward one if empty
   if (inBounds(forwardY, pos_x) && !board[forwardY][pos_x].piece) {
     board[forwardY][pos_x].move = true;
+
+    // allow double-step from initial rank if both squares are empty
+    const startY = dir === 1 ? 1 : (BOARD_HEIGHT - 2);
+    const twoStepY = pos_y + dir * 2;
+    if (pos_y === startY && inBounds(twoStepY, pos_x) && !board[twoStepY][pos_x].piece) {
+      // ensure the intermediate square is also empty (already checked forwardY)
+      board[twoStepY][pos_x].move = true;
+    }
   }
 
   // captures: diag left/right

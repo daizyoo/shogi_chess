@@ -42,6 +42,7 @@ let game = new Game(
     { piece_type: 'chess', turn: false, name: 'player1', id: 0 },
     { piece_type: 'shogi', turn: true, name: 'player2', id: 1 }
   ],
+  'Ou_2_Queen_2'
 )
 
 draw_setup()

@@ -1,6 +1,6 @@
 import { ESC } from "./consts.js"
 import { PIECE_LSIT } from "./piece.js"
-import type { MoveBoard } from "./type.js"
+import type { MapPattern, MoveBoard } from "./type.js"
 import type { Board, Piece, Player, Position } from "./type.js"
 import { boardout_check, createBoard, unwrap } from "./utils.js"
 import * as map from "./map.js"
@@ -17,26 +17,29 @@ export class Game {
   selection: { status: boolean; piece?: Piece; pos?: Position } = { status: false }
 
   // new stateful properties
-  cursor: Position = { x: 0, y: 0 }
+  cursor: Position = { x: 4, y: 4 }
   moveBoard?: MoveBoard
   board: Board
 
-  public constructor(players: [Player, Player]) {
-    this.players = players
-
-    this.hand.set(players[0].id, new Map())
-    this.hand.set(players[1].id, new Map())
-
+  public constructor(players: [Player, Player], map_pattern: MapPattern) {
     let first_player = players.find(p => p.turn)
     let second_player = players.find(p => !p.turn)
-    if (!first_player || !second_player) process.exit() // 先手後手がどちらかいなければ終了
+
+    if (!first_player || !second_player) throw new Error("先手後手のプレイヤー情報が不正です")
+
+    this.players = players
 
     this.players[0] = first_player
     this.players[1] = second_player
 
-    let m = map.getMap(first_player.piece_type, 'Ou_2_Queen_2')
+    this.hand.set(players[0].id, new Map())
+    this.hand.set(players[1].id, new Map())
+
+    let m = map.getMap(first_player.piece_type, map_pattern)
 
     this.board = createBoard(m, players)
+
+    console.log(this)
   }
 
   getTurnPlayer(): Player {

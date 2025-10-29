@@ -1,8 +1,8 @@
 import WebSocket, { WebSocketServer } from "ws"
-import type { MessageType, Response, WaitRoom, Room, InRoom, Data } from "./types.js"
+import type { MessageType, Response, WaitRoom, Room, InRoom, Data, ReturnGame, UpdateGame } from "./types.js"
 import { toString } from "./types.js"
 import { Game } from "../game.js"
-import type { UpdateGame } from "./client.js"
+import type { Board, MoveBoard } from "../type.js"
 
 type WSSInfo = {
   player_id: number,
@@ -66,7 +66,7 @@ const joinRoom = (ws: WebSocket, data: InRoom) => {
   const room: Room = {
     id: target.info.id,
     name: target.info.name,
-    game: new Game([target.info.player, data.player]) // 待っていたプレイヤーと入ってきたプレイヤーでGameクラスインスタンスを作成
+    game: new Game([target.info.player, data.player], 'King_2') // 待っていたプレイヤーと入ってきたプレイヤーでGameクラスインスタンスを作成
   }
 
   // remove from wait list
@@ -76,12 +76,29 @@ const joinRoom = (ws: WebSocket, data: InRoom) => {
   // register active room and keep ws for both participants
   roomRecords.push({ room, wss: [{ player_id: target.info.player.id, ws: target.ws }, { player_id: data.player.id, ws }] })
 
+  let game: ReturnGame = {
+    hand: [...room.game.hand].map(([outerKey, innerMap]) => [outerKey, [...innerMap]]),
+    players: room.game.players,
+    turn: room.game.turn,
+    status: room.game.status,
+    put_selection: room.game.put_selection,
+    selection: room.game.selection,
+    cursor: room.game.turn ? room.game.cursor : (() => {
+      let cursor = room.game.cursor
+      cursor.x = 8 - cursor.x
+      cursor.y = 8 - cursor.y
+      return cursor
+    })(),
+    moveBoard: room.game.moveBoard,
+    board: room.game.board,
+  }
+
   // notify both participants to start game
-  const payload = { type: "start_game", data: room }
+  const payload = { type: "start_game", data: game }
   send(target.ws, payload)
   send(ws, payload)
 
-  console.log(`▶️ ルーム開始 id=${room.id} players=`, room.game.players)
+  console.log(`▶️ ルーム開始 id=${room.id} players=`, game.players)
 }
 
 const deleteRoom = (roomId: number) => {
@@ -146,12 +163,43 @@ const leaveRoom = (ws: WebSocket, payload?: { id?: number }) => {
   send(ws, response({ code: "error", message: "退室できるルームが見つかりません" }))
 }
 
+let cursor_change_status: boolean = false
+
 const game_update = (ws: WebSocket, data: UpdateGame) => {
   let room = roomRecords.find(r => r.room.id == data.room_id)
-  if (!room) send(ws, response({ code: 'error', message: 'roomが存在しません' }))
-  let e_ws = room?.wss.find(wssi => wssi.player_id != data.player_id)
-  if (!e_ws) process.exit(1)
-  send(e_ws?.ws, { type: 'game_update', data: data.game } as Data<Game>)
+  if (!room) {
+    send(ws, response({ code: 'error', message: 'roomが存在しません' }))
+    return
+  }
+  let game = room.room.game
+
+  if (game.turn) cursor_change_status = false
+  if (!game.turn && !cursor_change_status) {
+    game.cursor.x = 8 - game.cursor.x
+    game.cursor.y = 8 - game.cursor.y
+    cursor_change_status = true
+  }
+
+  game.handleInput(data.key)
+
+  let r_game: ReturnGame = {
+    players: game.players,
+    hand: [...game.hand].map(([outerKey, innerMap]) => [outerKey, [...innerMap]]),
+    turn: game.turn,
+    status: game.status,
+    put_selection: game.put_selection,
+    selection: game.selection,
+    cursor: game.cursor,
+    moveBoard: game.moveBoard,
+    board: game.board,
+  }
+
+  room?.wss.forEach(wssi => {
+    send(wssi.ws, { type: 'game_update', data: r_game } as Data<ReturnGame>)
+  })
+}
+
+const boardDebug = (board: Board | MoveBoard) => {
 }
 
 wss.on("connection", (ws) => {
@@ -165,9 +213,10 @@ wss.on("connection", (ws) => {
     let data = JSON.parse(d.toString())
     let type: MessageType = data.type
     switch (type) {
-      case "create_room": createRoom(ws, data.data); break;
-      case 'in_room': joinRoom(ws, data.data); break;
+      case "create_room": console.log('create room'); createRoom(ws, data.data); break;
+      case 'in_room': console.log('join room'); joinRoom(ws, data.data); break;
       case 'delete_room': {
+        console.log('delete room');
         const id = data.data?.id
         if (typeof id === 'number') {
           const ok = deleteRoom(id)
@@ -177,9 +226,9 @@ wss.on("connection", (ws) => {
         }
         break
       }
-      case 'list_rooms': listRooms(ws); break;
-      case 'leave_room': leaveRoom(ws, data.data); break;
-      case 'game_update': game_update(ws, data.data); break;
+      case 'list_rooms': console.log('list rooms'); listRooms(ws); break;
+      case 'leave_room': console.log('leave room'); leaveRoom(ws, data.data); break;
+      case 'game_update': console.log('game update'); game_update(ws, data.data); break;
       default: send(ws, response({ code: "error", message: `不明なタイプ: ${type}` }))
     }
   })

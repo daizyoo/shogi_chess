@@ -54,13 +54,13 @@ export type PieceInfo = {
 
 export type Piece = PieceInfo & { player: Player }
 
-export type Grid = {
-  piece?: Piece,
+export class Grid {
+  piece?: Piece
 }
 
 export type Board = Grid[][]
 
-export type MGrid = {
+export interface MGrid {
   piece?: Piece,
   move: boolean
 }
